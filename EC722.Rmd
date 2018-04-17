@@ -1,0 +1,218 @@
+---
+title: "EC722"
+author: "Janhavi Nerurkar"
+date: "3/28/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("~/Documents/MSSP/EC 722/Final Paper")
+##library(caTools)
+##library(memisc)
+##library(ROCR)
+##library(foreign)
+##library(data.table)
+##library(sqldf)
+```
+```{r}
+
+```
+
+Census
+```{r}
+census <- read.csv("ipumsi_00004.csv", header = TRUE, sep = ",")
+census <- subset(census, !(SPEAKIND %in% c(9)))
+census <- subset(census, !(LIT %in% c(9)))
+##summary(census)
+census$INDBIN <- ifelse(census$SPEAKIND == 4, 0, 1)
+sumstats <- aggregate(census, by = list(census$YEAR), FUN = mean, na.rm = TRUE)
+sumstats2 <- aggregate(census, by = list(census$INDBIN), FUN = mean, na.rm = TRUE)
+##write.csv(sumstats, file = "SumStats1.csv")
+##write.csv(sumstats2, file = "SumStats2.csv")
+
+census1990 <- subset(census, census$YEAR %in% c(1990))
+census2000 <- subset(census, census$YEAR %in% c(2000))
+census2010 <- subset(census, census$YEAR %in% c(2010))
+colnames(census)
+```
+
+
+```{r}
+cat("Answers to Indigenous Languages Question by Census Year
+")
+table(census$SPEAKIND, census$YEAR)
+```
+
+```{r}
+cat("Indigenous Language Speakers vs Non-Speakers by Census Year
+")
+table(census$INDBIN, census$YEAR)
+
+cat("
+Indigenous Language Speakers vs Non-Speakers
+")
+Table(census$INDBIN, weights = NULL, counts = TRUE)
+
+cat("
+% Indigenous Language Speakers vs Non-Speakers
+")
+Table(census$INDBIN, weights = NULL, counts = FALSE, percentage = TRUE)
+```
+
+```{r}
+cat("Indigenous Language Speakers vs Non-Speakers by State Code")
+table(census$GEO1_MX, census$INDBIN)
+
+state <- data.frame(table(census$GEO1_MX, census$INDBIN, census$YEAR))
+colnames(state) <- c("State_Cd", "Ind", "Year", "Count")
+
+statemx <- read.csv("States.csv", header = TRUE, sep = ",")
+colnames(statemx) <- c("State_Cd", "State_Nm")
+
+state$State_Nm <- vlookup(state$State_Cd, statemx, result_column = 2, lookup_column = 1)
+xtabs(Count ~ State_Nm + Year + Ind, state)
+```
+
+```{r}
+ggplot(data = state, aes(x = State_Nm, y = Count, group = Year)) +
+  geom_col(aes(fill = Year), position = "dodge") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(title = "Population Surveyed by State",
+       x = "State", y = "Count")
+```
+
+
+```{r}
+state2010 <- subset(state, state$Year %in% c(2010))
+ggplot(data = state2010, aes(x = State_Nm, y = Count, group = Ind)) +
+  geom_col(aes(fill = Ind), position = "dodge") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(title = "Indigenous Language Speakers and Non-Speakers by State in 2010",
+       x = "State", y = "Count")
+```
+```{r}
+ggplot(data = state2010, aes(x = State_Nm, y = Count, fill = Ind)) +
+  geom_bar(position = position_fill(), stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(title = "Proportion of Indigenous Language Speakers and Non-Speakers by State in 2010",
+       x = "State", y = "%")
+```
+
+
+```{r}
+library(ggplot2)
+ggplot(census) +
+  geom_bar(aes(x = YEAR, fill = as.factor(INDBIN)), stat = "count", position = position_dodge()) +
+  labs(title = "Indigenous Language Speakers by Year",
+       x = "Year", y = "Count")
+##theme(axis.text.x = element_text(vjust = 1, hjust = 1))
+```
+
+
+```{r}
+lang <- data.frame(table(census$LANGMX, census$YEAR))
+colnames(lang) <- c("Lang_Cd", "Year", "Count")
+
+langmx <- read.csv("LangMx.csv", header = TRUE, sep = ",")
+colnames(langmx) <- c("Lang_Cd", "Lang_Nm")
+
+lang$Lang_Nm <- vlookup(lang$Lang_Cd, langmx, result_column = 2, lookup_column = 1)
+
+##install.packages("expss")
+##library(expss)
+
+cat("Speakers for each Indigenous Language by Census Year
+")
+xtabs(Count ~ Lang_Nm + Year, lang)
+```
+
+
+```{r}
+cat("Literacy for Indigenous Language Speakers vs Non-Speakers
+")
+table(census$INDBIN, census$LIT)
+##table(census$LIT)
+cat("
+Illiteracy Rates for Indigenous Language Speakers:")
+89500/(89500+195098)
+cat("
+Illiteracy Rates for Non-Speakers:")
+139923/(139923+1543531)
+```
+```{r}
+table(census2010$HLTHFAC, census2010$INDBIN)
+```
+
+
+```{r}
+reg1 <- lm(sqrt(INCEARN) ~ INDBIN, data = census)
+summary(reg1)
+```
+
+```{r}
+reg2 <- lm(HRSWORK2 ~ INDBIN, data = census)
+summary(reg2)
+```
+
+```{r}
+##TEST. DO NOT USE
+testreg <- glm(INDBIN ~ INCEARN, data = census2000, family = binomial(link = logit))
+summary(testreg)
+ggplot(census2000, aes(x = INCEARN, y = INDBIN)) + 
+  geom_point() + 
+  stat_smooth(method="glm", family="binomial", se=FALSE)
+```
+
+
+```{r}
+##1990
+set.seed(1990)
+split1990 <- sample.split(census1990$INDBIN, 0.75)
+train1990 <- subset(census1990, split1990 == TRUE)
+test1990 <- subset(census1990, split1990 == FALSE)
+reg1990 <- glm(INDBIN ~ INCEARN + OWNERSHIP, data = train1990, family = binomial(link = logit))
+summary(reg1990)
+pred1990 <- predict.glm(reg1990, newdata = test1990, type = c("response"))
+ROCpred1990 <- prediction(pred1990, test1990$INDBIN)
+ROCperf1990 <- performance(ROCpred1990, measure = "tpr", x.measure = "fpr")
+plot(ROCperf1990, colorize = TRUE)
+abline(a = 0, b = 1)
+```
+```{r}
+
+```
+
+
+
+```{r}
+##2000
+set.seed(2000)
+split2000 <- sample.split(census2000$INDBIN, 0.75)
+train2000 <- subset(census2000, split2000 == TRUE)
+test2000 <- subset(census2000, split2000 == FALSE)
+reg2000 <- glm(INDBIN ~ INCEARN + OWNERSHIP, data = train2000, family = binomial(link = logit))
+summary(reg2000)
+pred2000 <- predict.glm(reg2000, newdata = test2000, type = c("response"))
+ROCpred2000 <- prediction(pred2000, test2000$INDBIN)
+ROCperf2000 <- performance(ROCpred2000, measure = "tpr", x.measure = "fpr")
+plot(ROCperf2000, colorize = TRUE)
+abline(a = 0, b = 1)
+```
+
+
+```{r}
+##2010
+set.seed(2010)
+split2010 <- sample.split(census2010$INDBIN, 0.75)
+train2010 <- subset(census2010, split2010 == TRUE)
+test2010 <- subset(census2010, split2010 == FALSE)
+reg2010 <- glm(INDBIN ~ INCEARN + OWNERSHIP, data = train2010, family = binomial(link = logit))
+summary(reg2010)
+pred2010 <- predict.glm(reg2010, newdata = test2010, type = c("response"))
+ROCpred2010 <- prediction(pred2010, test2010$INDBIN)
+ROCperf2010 <- performance(ROCpred2010, measure = "tpr", x.measure = "fpr")
+plot(ROCperf2010, colorize = TRUE)
+abline(a = 0, b = 1)
+```
+
