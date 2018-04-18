@@ -1,7 +1,7 @@
 ---
 title: "EC722"
 author: "Janhavi Nerurkar"
-date: "3/28/2018"
+date: "4/17/2018"
 output: pdf_document
 ---
 
@@ -14,6 +14,7 @@ setwd("~/Documents/MSSP/EC 722/Final Paper")
 ##library(foreign)
 ##library(data.table)
 ##library(sqldf)
+##library(expss)
 ```
 ```{r}
 
@@ -21,7 +22,7 @@ setwd("~/Documents/MSSP/EC 722/Final Paper")
 
 Census
 ```{r}
-census <- read.csv("ipumsi_00004.csv", header = TRUE, sep = ",")
+##census <- read.csv("ipumsi_00004.csv", header = TRUE, sep = ",")
 census <- subset(census, !(SPEAKIND %in% c(9)))
 census <- subset(census, !(LIT %in% c(9)))
 ##summary(census)
@@ -39,8 +40,10 @@ colnames(census)
 
 
 ```{r}
-cat("Answers to Indigenous Languages Question by Census Year
+cat("Answers to Indigenous Question by Census Year
 ")
+table(census$INDIG, census$YEAR)
+
 table(census$SPEAKIND, census$YEAR)
 ```
 
@@ -119,9 +122,6 @@ colnames(langmx) <- c("Lang_Cd", "Lang_Nm")
 
 lang$Lang_Nm <- vlookup(lang$Lang_Cd, langmx, result_column = 2, lookup_column = 1)
 
-##install.packages("expss")
-##library(expss)
-
 cat("Speakers for each Indigenous Language by Census Year
 ")
 xtabs(Count ~ Lang_Nm + Year, lang)
@@ -132,7 +132,7 @@ xtabs(Count ~ Lang_Nm + Year, lang)
 cat("Literacy for Indigenous Language Speakers vs Non-Speakers
 ")
 table(census$INDBIN, census$LIT)
-##table(census$LIT)
+
 cat("
 Illiteracy Rates for Indigenous Language Speakers:")
 89500/(89500+195098)
@@ -141,10 +141,10 @@ Illiteracy Rates for Non-Speakers:")
 139923/(139923+1543531)
 ```
 ```{r}
-table(census2010$HLTHFAC, census2010$INDBIN)
+table(census2010$YRSCHOOL, census2010$INDBIN)
 ```
 
-
+Regressions
 ```{r}
 reg1 <- lm(sqrt(INCEARN) ~ INDBIN, data = census)
 summary(reg1)
@@ -171,7 +171,7 @@ set.seed(1990)
 split1990 <- sample.split(census1990$INDBIN, 0.75)
 train1990 <- subset(census1990, split1990 == TRUE)
 test1990 <- subset(census1990, split1990 == FALSE)
-reg1990 <- glm(INDBIN ~ INCEARN + OWNERSHIP, data = train1990, family = binomial(link = logit))
+reg1990 <- glm(INDBIN ~ INCEARN + OWNERSHIP + LIT + YRSCHOOL + NCHILD + FAMSIZE, data = train1990, family = binomial(link = logit))
 summary(reg1990)
 pred1990 <- predict.glm(reg1990, newdata = test1990, type = c("response"))
 ROCpred1990 <- prediction(pred1990, test1990$INDBIN)
@@ -179,11 +179,6 @@ ROCperf1990 <- performance(ROCpred1990, measure = "tpr", x.measure = "fpr")
 plot(ROCperf1990, colorize = TRUE)
 abline(a = 0, b = 1)
 ```
-```{r}
-
-```
-
-
 
 ```{r}
 ##2000
@@ -191,7 +186,7 @@ set.seed(2000)
 split2000 <- sample.split(census2000$INDBIN, 0.75)
 train2000 <- subset(census2000, split2000 == TRUE)
 test2000 <- subset(census2000, split2000 == FALSE)
-reg2000 <- glm(INDBIN ~ INCEARN + OWNERSHIP, data = train2000, family = binomial(link = logit))
+reg2000 <- glm(INDBIN ~ INCEARN + OWNERSHIP + LIT + YRSCHOOL + NCHILD+ FAMSIZE, data = train2000, family = binomial(link = logit))
 summary(reg2000)
 pred2000 <- predict.glm(reg2000, newdata = test2000, type = c("response"))
 ROCpred2000 <- prediction(pred2000, test2000$INDBIN)
@@ -207,12 +202,33 @@ set.seed(2010)
 split2010 <- sample.split(census2010$INDBIN, 0.75)
 train2010 <- subset(census2010, split2010 == TRUE)
 test2010 <- subset(census2010, split2010 == FALSE)
-reg2010 <- glm(INDBIN ~ INCEARN + OWNERSHIP, data = train2010, family = binomial(link = logit))
+reg2010 <- glm(INDBIN ~ INCEARN + OWNERSHIP + LIT + YRSCHOOL + NCHILD + FAMSIZE, data = train2010, family = binomial(link = logit))
 summary(reg2010)
 pred2010 <- predict.glm(reg2010, newdata = test2010, type = c("response"))
 ROCpred2010 <- prediction(pred2010, test2010$INDBIN)
 ROCperf2010 <- performance(ROCpred2010, measure = "tpr", x.measure = "fpr")
 plot(ROCperf2010, colorize = TRUE)
+abline(a = 0, b = 1)
+```
+```{r}
+##Predicting 2010 using 1990 model
+reg9010 <- glm(INDBIN ~ INCEARN + OWNERSHIP + LIT + YRSCHOOL + NCHILD + FAMSIZE, data = census1990, family = binomial(link = logit))
+pred9010 <- predict.glm(reg9010, newdata = census2010, type = c("response"))
+summary(reg9010)
+ROCpred9010 <- prediction(pred9010, census2010$INDBIN)
+ROCperf9010 <- performance(ROCpred9010, measure = "tpr", x.measure = "fpr")
+plot(ROCperf9010, colorize = TRUE)
+abline(a = 0, b = 1)
+```
+
+```{r}
+##Predicting 2010 using 2000 model
+reg0010 <- glm(INDBIN ~ INCEARN + OWNERSHIP + LIT + YRSCHOOL + NCHILD + FAMSIZE, data = census2000, family = binomial(link = logit))
+pred0010 <- predict.glm(reg0010, newdata = census2010, type = c("response"))
+summary(reg0010)
+ROCpred0010 <- prediction(pred0010, census2010$INDBIN)
+ROCperf0010 <- performance(ROCpred0010, measure = "tpr", x.measure = "fpr")
+plot(ROCperf0010, colorize = TRUE)
 abline(a = 0, b = 1)
 ```
 
