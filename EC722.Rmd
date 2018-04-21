@@ -1,7 +1,7 @@
 ---
 title: "EC722"
 author: "Janhavi Nerurkar"
-date: "4/17/2018"
+date: "4/21/2018"
 output: pdf_document
 ---
 
@@ -15,10 +15,10 @@ setwd("~/Documents/MSSP/EC 722/Final Paper")
 ##library(data.table)
 ##library(sqldf)
 ##library(expss)
+##library(caret)
+##library(heuristica)
 ```
-```{r}
 
-```
 
 Census
 ```{r}
@@ -88,18 +88,22 @@ ggplot(data = state, aes(x = State_Nm, y = Count, group = Year)) +
 
 ```{r}
 state2010 <- subset(state, state$Year %in% c(2010))
+cat("Indigenous Language Speakers and Non-Speakers by State in 2010")
+jpeg(filename = 'State_Num.jpg', height = 360, width = 480, units = "px")
 ggplot(data = state2010, aes(x = State_Nm, y = Count, group = Ind)) +
   geom_col(aes(fill = Ind), position = "dodge") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  labs(title = "Indigenous Language Speakers and Non-Speakers by State in 2010",
-       x = "State", y = "Count")
+  labs(x = "State", y = "Count")
+dev.off()
 ```
 ```{r}
+cat("Proportion of Indigenous Language Speakers and Non-Speakers by State in 2010")
+jpeg(filename = 'State_Prop.jpg', height = 360, width = 480, units = "px")
 ggplot(data = state2010, aes(x = State_Nm, y = Count, fill = Ind)) +
   geom_bar(position = position_fill(), stat = "identity") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  labs(title = "Proportion of Indigenous Language Speakers and Non-Speakers by State in 2010",
-       x = "State", y = "%")
+  labs(x = "State", y = "%")
+dev.off()
 ```
 
 
@@ -131,7 +135,7 @@ xtabs(Count ~ Lang_Nm + Year, lang)
 ```{r}
 cat("Literacy for Indigenous Language Speakers vs Non-Speakers
 ")
-table(census$INDBIN, census$LIT)
+table(census$INDBIN, census$LIT, census$YEAR)
 
 cat("
 Illiteracy Rates for Indigenous Language Speakers:")
@@ -162,6 +166,8 @@ summary(testreg)
 ggplot(census2000, aes(x = INCEARN, y = INDBIN)) + 
   geom_point() + 
   stat_smooth(method="glm", family="binomial", se=FALSE)
+
+table(census$SEWAGE, census$INDBIN)
 ```
 
 
@@ -171,7 +177,7 @@ set.seed(1990)
 split1990 <- sample.split(census1990$INDBIN, 0.75)
 train1990 <- subset(census1990, split1990 == TRUE)
 test1990 <- subset(census1990, split1990 == FALSE)
-reg1990 <- glm(INDBIN ~ INCEARN + OWNERSHIP + LIT + YRSCHOOL + NCHILD + FAMSIZE, data = train1990, family = binomial(link = logit))
+reg1990 <- glm(INDBIN ~ OWNERSHIP + ELECTRIC + LIT + YRSCHOOL + NCHILD + EMPSTAT + INDGEN, data = train1990, family = binomial(link = logit))
 summary(reg1990)
 pred1990 <- predict.glm(reg1990, newdata = test1990, type = c("response"))
 ROCpred1990 <- prediction(pred1990, test1990$INDBIN)
@@ -186,7 +192,7 @@ set.seed(2000)
 split2000 <- sample.split(census2000$INDBIN, 0.75)
 train2000 <- subset(census2000, split2000 == TRUE)
 test2000 <- subset(census2000, split2000 == FALSE)
-reg2000 <- glm(INDBIN ~ INCEARN + OWNERSHIP + LIT + YRSCHOOL + NCHILD+ FAMSIZE, data = train2000, family = binomial(link = logit))
+reg2000 <- glm(INDBIN ~ OWNERSHIP + ELECTRIC + LIT + NCHILD + EMPSTAT + HLTHCOV + HLTHFAC, data = train2000, family = binomial(link = logit))
 summary(reg2000)
 pred2000 <- predict.glm(reg2000, newdata = test2000, type = c("response"))
 ROCpred2000 <- prediction(pred2000, test2000$INDBIN)
@@ -202,7 +208,7 @@ set.seed(2010)
 split2010 <- sample.split(census2010$INDBIN, 0.75)
 train2010 <- subset(census2010, split2010 == TRUE)
 test2010 <- subset(census2010, split2010 == FALSE)
-reg2010 <- glm(INDBIN ~ INCEARN + OWNERSHIP + LIT + YRSCHOOL + NCHILD + FAMSIZE, data = train2010, family = binomial(link = logit))
+reg2010 <- glm(INDBIN ~ OWNERSHIP + ELECTRIC + LIT + NCHILD + EMPSTAT + HLTHCOV + HLTHFAC, data = train2010, family = binomial(link = logit))
 summary(reg2010)
 pred2010 <- predict.glm(reg2010, newdata = test2010, type = c("response"))
 ROCpred2010 <- prediction(pred2010, test2010$INDBIN)
