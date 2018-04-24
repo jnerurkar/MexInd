@@ -1,7 +1,7 @@
 ---
 title: "EC722"
 author: "Janhavi Nerurkar"
-date: "4/22/2018"
+date: "4/23/2018"
 output: pdf_document
 ---
 
@@ -17,6 +17,7 @@ setwd("~/Documents/MSSP/EC 722/Final Paper")
 ##library(expss)
 ##library(caret)
 ##library(heuristica)
+##library("AUC")
 ```
 
 
@@ -78,11 +79,13 @@ xtabs(Count ~ State_Nm + Year + Ind, state)
 ```
 
 ```{r}
+jpeg(filename = 'pop.jpg', width = 480, height = 360)
 ggplot(data = state, aes(x = State_Nm, y = Count, group = Year)) +
   geom_col(aes(fill = Year), position = "dodge") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   labs(title = "Population Surveyed by State",
        x = "State", y = "Count")
+dev.off()
 ```
 
 
@@ -182,7 +185,7 @@ summary(reg1990)
 pred1990 <- predict.glm(reg1990, newdata = test1990, type = c("response"))
 ROCpred1990 <- prediction(pred1990, test1990$INDBIN)
 ROCperf1990 <- performance(ROCpred1990, measure = "tpr", x.measure = "fpr")
-jpeg(filename = 'reg1990.csv', width = 480, height = 360)
+jpeg(filename = 'reg1990.jpg', width = 480, height = 360)
 plot(ROCperf1990, colorize = TRUE)
 abline(a = 0, b = 1)
 dev.off()
@@ -199,7 +202,7 @@ summary(reg2000)
 pred2000 <- predict.glm(reg2000, newdata = test2000, type = c("response"))
 ROCpred2000 <- prediction(pred2000, test2000$INDBIN)
 ROCperf2000 <- performance(ROCpred2000, measure = "tpr", x.measure = "fpr")
-jpeg(filename = 'reg2000.csv', width = 480, height = 360)
+jpeg(filename = 'reg2000.jpg', width = 480, height = 360)
 plot(ROCperf2000, colorize = TRUE)
 abline(a = 0, b = 1)
 dev.off()
@@ -217,7 +220,7 @@ summary(reg2010)
 pred2010 <- predict.glm(reg2010, newdata = test2010, type = c("response"))
 ROCpred2010 <- prediction(pred2010, test2010$INDBIN)
 ROCperf2010 <- performance(ROCpred2010, measure = "tpr", x.measure = "fpr")
-jpeg(filename = 'reg2010.csv', width = 480, height = 360)
+jpeg(filename = 'reg2010.jpg', width = 480, height = 360)
 plot(ROCperf2010, colorize = TRUE)
 abline(a = 0, b = 1)
 dev.off()
@@ -229,7 +232,7 @@ pred9010 <- predict.glm(reg9010, newdata = census2010, type = c("response"))
 summary(reg9010)
 ROCpred9010 <- prediction(pred9010, census2010$INDBIN)
 ROCperf9010 <- performance(ROCpred9010, measure = "tpr", x.measure = "fpr")
-jpeg(filename = 'reg9010.csv', width = 480, height = 360)
+jpeg(filename = 'reg9010.jpg', width = 480, height = 360)
 plot(ROCperf9010, colorize = TRUE)
 abline(a = 0, b = 1)
 dev.off()
@@ -242,7 +245,7 @@ pred0010 <- predict.glm(reg0010, newdata = census2010, type = c("response"))
 summary(reg0010)
 ROCpred0010 <- prediction(pred0010, census2010$INDBIN)
 ROCperf0010 <- performance(ROCpred0010, measure = "tpr", x.measure = "fpr")
-jpeg(filename = 'reg0010.csv', width = 480, height = 360)
+jpeg(filename = 'reg0010.jpg', width = 480, height = 360)
 plot(ROCperf0010, colorize = TRUE)
 abline(a = 0, b = 1)
 dev.off()
